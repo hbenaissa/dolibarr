@@ -63,7 +63,6 @@ pipeline {
           }
         }
       }
-    }
     //  Scan container with trivy
     stage('trivy scan'){
       steps{
@@ -83,6 +82,6 @@ pipeline {
         }
       }
     }
-    
   }
+}
 }
