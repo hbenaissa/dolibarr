@@ -73,12 +73,14 @@ pipeline {
       }
     }
     stage('Push'){
-      steps{
-        container('docker'){
-           // Push the Docker image to your Docker registry
-            docker.withRegistry('iyedbnaissa/dolibarr_build', '30') {
-              appImage.push() 
+    steps{
+      container('docker'){
+        script {
+          // Push the Docker image to your Docker registry
+          docker.withRegistry('https://registry.example.com', 'credentials-id') {
+            appImage.push() 
             }
+          }
         }
       }
     }
