@@ -77,11 +77,10 @@ pipeline {
         container('docker'){
            // Push the Docker image to your Docker registry
             docker.withRegistry('iyedbnaissa/dolibarr_build', '30') {
-              appImage.push()
-              
+            appImage.push() 
+            }
         }
       }
     }
   }
-}
 }
