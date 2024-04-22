@@ -41,7 +41,7 @@ pipeline {
     // Scan your source code with SonarQube Analysis
     stage('SonarQube Analysis') {
       environment {
-             SONAR_SCANNER_OPTS = " -Xmx1024m"
+        SONAR_SCANNER_OPTS = " -Xmx1024m"
       }
       steps {
         script {
@@ -59,11 +59,11 @@ pipeline {
           script {
             // Build the Docker image
             def appImage = docker.build("iyedbnaissa/dolibarr_build:${env.BUILD_NUMBER}", "-f Dockerfile .")
-            }
           }
         }
       }
-    //  Scan container with trivy
+    }
+    // Scan container with trivy
     stage('trivy scan'){
       steps{
         container('trivy'){
@@ -77,7 +77,7 @@ pipeline {
         container('docker'){
            // Push the Docker image to your Docker registry
             docker.withRegistry('iyedbnaissa/dolibarr_build', '30') {
-            appImage.push() 
+              appImage.push() 
             }
         }
       }
