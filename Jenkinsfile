@@ -38,6 +38,21 @@ pipeline {
         checkout scm
        }
     }
+    // Scan your source code with SonarQube Analysis
+    stage('SonarQube Analysis') {
+      environment {
+        SONAR_SCANNER_OPTS = " -Xmx1024m"
+      }
+      steps {
+        script {
+          def scannerHome = tool 'SonarQube_Scanner';
+          // Execute SonarQube analysis
+          withSonarQubeEnv('SonarQube_Server') {
+            sh "${scannerHome}/bin/sonar-scanner -Dproject.settings=sonar-project.properties"
+          }
+        }
+      }
+    }
     
     stage('Build Docker Image') {
       steps {
@@ -63,8 +78,8 @@ pipeline {
       container('docker'){
         script {
           // Push the Docker image to your Docker registry
-          docker.withRegistry('https://registry.example.com', 'credentials-id') {
-            appImage.push() 
+          docker.withRegistry('iyedbnaissa/dolibarr_build', '30') {
+           docker.image(iyedbnaissa/dolibarr_build:${env.BUILD_NUMBER}).push() 
             }
           }
         }
