@@ -79,7 +79,7 @@ pipeline {
         script {
           // Push the Docker image to your Docker registry
           docker.withRegistry('iyedbnaissa/dolibarr_build', '30') {
-           docker.image(iyedbnaissa/dolibarr_build:${env.BUILD_NUMBER}).push() 
+           docker.image('dolibarr_build').push() 
             }
           }
         }
