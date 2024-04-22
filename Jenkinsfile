@@ -59,9 +59,6 @@ pipeline {
           script {
             // Build the Docker image
             def appImage = docker.build("iyedbnaissa/dolibarr_build:${env.BUILD_NUMBER}", "-f Dockerfile .")
-            // Push the Docker image to your Docker registry
-            docker.withRegistry('', '30') {
-              appImage.push()
             }
           }
         }
@@ -71,11 +68,20 @@ pipeline {
     stage('trivy scan'){
       steps{
         container('trivy'){
-          sh "trivy image iyedbnaissa/dolibarr_build:30 --severity HIGH,CRITICAL --format template --template '@sonarqube.tpl' -o trivy_report.json --scanners vuln"
+          sh "trivy image iyedbnaissa/dolibarr_build:${env.BUILD_NUMBER} --severity HIGH,CRITICAL --format template --template '@sonarqube.tpl' -o trivy_report.json --scanners vuln"
           sh "cat trivy_report.json"
         }
       }
-   }
+    }
+    stage('Push'){
+      steps{
+        container('docker'){
+           // Push the Docker image to your Docker registry
+            docker.withRegistry('iyedbnaissa/dolibarr_build', '30') {
+              appImage.push()
+        }
+      }
+    }
     
   }
 }
