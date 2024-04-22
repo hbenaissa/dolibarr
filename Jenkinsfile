@@ -16,18 +16,18 @@ pipeline {
             command:
             - cat
             tty: true
-            - name: trivy
+          - name: trivy
             image: aquasec/trivy:canary
             command:
             - cat
             tty: true
-            volumeMounts:
-             - mountPath: /var/run/docker.sock
-               name: docker-sock
+          volumeMounts:
+          - mountPath: /var/run/docker.sock
+            name: docker-sock
           volumes:
           - name: docker-sock
             hostPath:
-              path: /var/run/docker.sock    
+              path: /var/run/docker.sock  
         '''
     }
   }
