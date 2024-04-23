@@ -10,7 +10,10 @@ pipeline {
             image: aquasec/trivy:canary
             command:
             - cat
-            tty: true  
+            tty: true
+            volumeMounts:
+             - mountPath: /var/run/docker.sock
+               name: docker-sock
           - name: git
             image: alpine/git:latest
             command:
