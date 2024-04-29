@@ -1,0 +1,33 @@
+pipeline {
+  agent {
+    kubernetes {
+      yaml '''
+        apiVersion: v1
+        kind: Pod
+        spec:
+          containers:
+          - name: phan
+            image: phanphp/phan
+            command:
+            - cat
+            tty: true
+        '''
+    }
+  }
+    stages {
+      stage('Checkout') {
+        steps {
+          // Checkout your source code
+          checkout scm
+       }
+    }
+     stage('phan scan'){
+      steps{
+          container('phan'){
+           sh "phan -k dev/tools/phan/config.php -B dev/tools/phan/baseline.txt --minimum-target-php-version 7.0 --output-mode=checkstyle -o phan.xml"
+            sh "cat phan.xml"
+          }
+      }
+    }
+  }
+}
