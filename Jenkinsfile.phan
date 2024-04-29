@@ -19,17 +19,17 @@ pipeline {
         steps {
           // Checkout your source code
           checkout scm
-       }
-    }
-     stage('phan scan'){
-      steps{
-          container('phan'){
-           // Install Phan if not pre-installed
-           sh "composer require phan/phan"
-           sh "phan -k dev/tools/phan/config.php -B dev/tools/phan/baseline.txt --minimum-target-php-version 7.0 --output-mode=checkstyle -o phan.xml"
-           sh "cat phan.xml"
-          }
+         }
       }
-    }
+       stage('phan scan'){
+        steps{
+            container('phan'){
+             // Install Phan if not pre-installed
+             sh "composer require phan/phan"
+             sh "phan -k dev/tools/phan/config.php -B dev/tools/phan/baseline.txt --minimum-target-php-version 7.0 --output-mode=checkstyle -o phan.xml"
+             sh "cat phan.xml"
+            }
+        }
+      }
   }
 }
