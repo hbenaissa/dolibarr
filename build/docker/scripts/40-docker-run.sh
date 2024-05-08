@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # vim:sw=4:ts=4:et
 
 # usage: get_env_value VAR [DEFAULT]
