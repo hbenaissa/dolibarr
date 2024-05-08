@@ -84,8 +84,8 @@ podAnnotations: {}
 podLabels: {}
 
 ## @param podSecurityContext Pod security context
-podSecurityContext: {}
-  # fsGroup: 2000
+podSecurityContext:
+  fsGroup: 101
 
 ## @param priorityClassName Priority class name
 priorityClassName:
@@ -103,8 +103,8 @@ securityContext:
     drop:
     - ALL
   # readOnlyRootFilesystem: true
-  # runAsNonRoot: true
-  # runAsUser: 1000
+  runAsNonRoot: true
+  runAsUser: 101
 
 containerPorts:
   ## @param containerPorts.http Container port for HTTP
