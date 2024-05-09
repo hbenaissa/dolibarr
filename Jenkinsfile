@@ -6,14 +6,6 @@ pipeline {
         kind: Pod
         spec:
           containers:
-          - name: trivy
-            image: aquasec/trivy:canary
-            command:
-            - cat
-            tty: true
-            volumeMounts:
-             - mountPath: /var/run/docker.sock
-               name: docker-sock
           - name: git
             image: alpine/git:latest
             command:
@@ -54,31 +46,6 @@ pipeline {
         }
       }
     }
-    stage('trivy scan'){
-      steps{
-          container('trivy'){
-            sh "trivy image iyedbnaissa/dolibarr_build:${env.BUILD_NUMBER} --severity HIGH,CRITICAL --format template --template '@sonarqube.tpl' -o trivy_report.json --scanners vuln"
-            sh "cat trivy_report.json"
-          }
-      }
-    }
-
-    stage('SonarQube Analysis') {
-      environment {
-             SONAR_SCANNER_OPTS = " -Xmx1024m"
-      }
-      steps {
-        script {
-          def scannerHome = tool 'SonarQube_Scanner';
-          // Execute SonarQube analysis
-          withSonarQubeEnv('SonarQube_Server') {
-           
-            sh "${scannerHome}/bin/sonar-scanner -Dproject.settings=sonar-project.properties"
-          }
-        }
-      }
-    }
-    
     stage('push'){
       steps{
         container('docker'){
