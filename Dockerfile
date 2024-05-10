@@ -300,7 +300,7 @@ RUN touch /var/run/nginx.pid && \
 RUN chmod g+wx /var/log && \
    chmod g+wx /opt
 
-#USER nginx
+USER nginx
 ### ----------------------------------------------------------
 ### CMD
 ### ----------------------------------------------------------
