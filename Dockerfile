@@ -219,7 +219,7 @@ RUN chmod +x /docker-entrypoint.d/*.sh /docker-entrypoint.sh
 RUN set -x && \
     apk update && apk upgrade && \
     apk add --no-cache \
-        supervisor bash \
+        supervisor bash mysql-client \
         && \
     rm -Rf /etc/nginx/nginx.conf && \
     rm -Rf /etc/nginx/conf.d/default.conf && \
@@ -282,7 +282,7 @@ VOLUME /var/www/html/custom
 COPY --chown=nginx:nginx docker-init.php /var/www/scripts/
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
-EXPOSE 80
+EXPOSE 8080
 
 STOPSIGNAL SIGTERM
 
@@ -291,7 +291,8 @@ STOPSIGNAL SIGTERM
 RUN chown -R nginx:nginx /usr/share/nginx/html && chmod -R 755 /usr/share/nginx/html && \
     chown -R nginx:nginx /var/cache/nginx && \
     chown -R nginx:nginx /var/log/nginx && \
-    chown -R nginx:nginx /etc/nginx/conf.d
+    chown -R nginx:nginx /etc/nginx/conf.d && \
+    chown -R nginx:nginx /usr/local/etc/
 
 RUN touch /var/run/nginx.pid && \
     chown -R nginx:nginx /var/run/nginx.pid
