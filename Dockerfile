@@ -284,7 +284,7 @@ COPY --chown=nginx:nginx docker-init.php /var/www/scripts/
 ENTRYPOINT ["/docker-entrypoint.sh"]
 EXPOSE 8080
 
-STOPSIGNAL SIGTERM
+#STOPSIGNAL SIGTERM
 
 ##### RUN nginx NON ROOT #######
 ## add permissions
