@@ -108,7 +108,7 @@ securityContext:
 
 containerPorts:
   ## @param containerPorts.http Container port for HTTP
-  http: 80
+  http: 8080
 
 livenessProbe:
   ## @param livenessProbe.enabled Enable liveness probe
@@ -191,7 +191,7 @@ service:
 
   ports:
     ## @param service.ports.http Service port for HTTP
-    http: 80
+    http: 8080
 
   nodePorts:
     ## @param service.nodePorts.http Service node port for HTTP when service type is LoadBalancer or NodePort
