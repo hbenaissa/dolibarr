@@ -1,29 +1,27 @@
 #!/bin/sh
 # vim:sw=4:ts=4:et
+set -e
 
 # usage: get_env_value VAR [DEFAULT]
 #    ie: get_env_value 'XYZ_DB_PASSWORD' 'example'
 # (will allow for "$XYZ_DB_PASSWORD_FILE" to fill in the value of
 #  "$XYZ_DB_PASSWORD" from a file, especially for Docker's secrets feature)
-function get_env_value() {
-	local varName="${1}"
-	local fileVarName="${varName}_FILE"
-	local defaultValue="${2:-}"
+get_env_value() {
+    local env_var_name="$1"
+    local default_value="$2"
+    local value
 
-	if [ "${!varName:-}" ] && [ "${!fileVarName:-}" ]; then
-		echo >&2 "error: both ${varName} and ${fileVarName} are set (but are exclusive)"
-		exit 1
-	fi
+    # Try to get the value of the environment variable
+    eval value=\$$env_var_name
 
-	local value="${defaultValue}"
-	if [ "${!varName:-}" ]; then
-	  value="${!varName}"
-	elif [ "${!fileVarName:-}" ]; then
-		value="$(< "${!fileVarName}")"
-	fi
-
-	echo ${value}
-	exit 0
+    # Check if the value is set and not empty
+    if [ -z "$value" ]; then
+        # If not, echo the default value
+        echo "$default_value"
+    else
+        # If it is, echo the value
+        echo "$value"
+    fi
 }
 
 function initDolibarr()

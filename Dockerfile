@@ -204,11 +204,11 @@ RUN set -x \
 # Bring in curl and ca-certificates to make registering on DNS SD easier
     && apk add --no-cache curl ca-certificates
 
-COPY build/docker/scripts/docker-entrypoint.sh /
-COPY build/docker/scripts/10-listen-on-ipv6-by-default.sh /docker-entrypoint.d
-COPY build/docker/scripts/20-envsubst-on-templates.sh /docker-entrypoint.d
-COPY build/docker/scripts/30-tune-worker-processes.sh /docker-entrypoint.d
-COPY build/docker/scripts/40-docker-run.sh /docker-entrypoint.d
+COPY --chown=nginx:nginx build/docker/scripts/docker-entrypoint.sh /
+COPY --chown=nginx:nginx build/docker/scripts/10-listen-on-ipv6-by-default.sh /docker-entrypoint.d
+COPY --chown=nginx:nginx build/docker/scripts/20-envsubst-on-templates.sh /docker-entrypoint.d
+COPY --chown=nginx:nginx build/docker/scripts/30-tune-worker-processes.sh /docker-entrypoint.d
+COPY --chown=nginx:nginx build/docker/scripts/40-docker-run.sh /docker-entrypoint.d
 
 RUN chmod +x /docker-entrypoint.d/*.sh /docker-entrypoint.sh 
 
@@ -219,16 +219,16 @@ RUN chmod +x /docker-entrypoint.d/*.sh /docker-entrypoint.sh
 RUN set -x && \
     apk update && apk upgrade && \
     apk add --no-cache \
-        supervisor \
+        supervisor bash \
         && \
     rm -Rf /etc/nginx/nginx.conf && \
     rm -Rf /etc/nginx/conf.d/default.conf && \
     # folders
     mkdir -p /var/log/supervisor
 
-COPY build/docker/conf/supervisord.conf /etc/supervisord.conf
-COPY build/docker/conf/nginx.conf /etc/nginx/nginx.conf
-COPY build/docker/conf/nginx-default.conf /etc/nginx/conf.d/default.conf
+COPY --chown=nginx:nginx build/docker/conf/supervisord.conf /etc/supervisord.conf
+COPY --chown=nginx:nginx build/docker/conf/nginx.conf /etc/nginx/nginx.conf
+COPY --chown=nginx:nginx build/docker/conf/nginx-default.conf /etc/nginx/conf.d/default.conf
 
 ENV DOLI_VERSION 19.0.0
 ENV DOLI_INSTALL_AUTO 1
@@ -266,8 +266,8 @@ ENV PHP_INI_POST_MAX_SIZE 8M
 ENV PHP_INI_ALLOW_URL_FOPEN 0
 
 # Get Dolibarr
-COPY htdocs/ /var/www/html/
-COPY scripts/ /var/www/scripts/
+COPY --chown=nginx:nginx htdocs/ /var/www/html/
+COPY --chown=nginx:nginx scripts/ /var/www/scripts/
 
 RUN ln -s /var/www/html /var/www/htdocs && \
     rm -rf /tmp/* && \
@@ -279,16 +279,30 @@ VOLUME /var/www/documents
 VOLUME /var/www/html/custom
 
 
-COPY docker-init.php /var/www/scripts/
+COPY --chown=nginx:nginx docker-init.php /var/www/scripts/
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
 EXPOSE 80
 
 STOPSIGNAL SIGTERM
+
+##### RUN nginx NON ROOT #######
+## add permissions
+RUN chown -R nginx:nginx /usr/share/nginx/html && chmod -R 755 /usr/share/nginx/html && \
+    chown -R nginx:nginx /var/cache/nginx && \
+    chown -R nginx:nginx /var/log/nginx && \
+    chown -R nginx:nginx /etc/nginx/conf.d
+
+RUN touch /var/run/nginx.pid && \
+    chown -R nginx:nginx /var/run/nginx.pid
+
+RUN chmod g+wx /var/log && \
+   chmod g+wx /opt
+
+#USER nginx
 ### ----------------------------------------------------------
 ### CMD
 ### ----------------------------------------------------------
 
 CMD ["nginx", "-g", "daemon off;"]
-
 
