@@ -212,6 +212,10 @@ COPY --chown=nginx:nginx build/docker/scripts/40-docker-run.sh /docker-entrypoin
 
 RUN chmod +x /docker-entrypoint.d/*.sh /docker-entrypoint.sh 
 
+COPY --chown=nginx:nginx /docker-entrypoint.d /usr/local/bin/
+
+RUN chmod +x /usr/local/bin/docker-entrypoint.d
+
 ### ----------------------------------------------------------
 ### Setup supervisord, nginx config
 ### ----------------------------------------------------------
