@@ -230,7 +230,7 @@ COPY --chown=nginx:nginx build/docker/conf/supervisord.conf /etc/supervisord.con
 COPY --chown=nginx:nginx build/docker/conf/nginx.conf /etc/nginx/nginx.conf
 COPY --chown=nginx:nginx build/docker/conf/nginx-default.conf /etc/nginx/conf.d/default.conf
 
-ENV DOLI_VERSION 19.0.0
+ENV DOLI_VERSION 19.0.2
 ENV DOLI_INSTALL_AUTO 1
 ENV DOLI_PROD 1
 
