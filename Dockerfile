@@ -205,7 +205,7 @@ RUN set -x \
     && apk add --no-cache curl ca-certificates
 
 COPY --chown=nginx:nginx build/docker/scripts/docker-entrypoint.sh /
-COPY --chown=nginx:nginx build/docker/scripts/10-listen-on-ipv6-by-default.sh /docker-entrypoint.d
+#²COPY --chown=nginx:nginx build/docker/scripts/10-listen-on-ipv6-by-default.sh /docker-entrypoint.d
 COPY --chown=nginx:nginx build/docker/scripts/20-envsubst-on-templates.sh /docker-entrypoint.d
 COPY --chown=nginx:nginx build/docker/scripts/30-tune-worker-processes.sh /docker-entrypoint.d
 COPY --chown=nginx:nginx build/docker/scripts/40-docker-run.sh /docker-entrypoint.d
@@ -227,7 +227,7 @@ RUN set -x && \
     mkdir -p /var/log/supervisor
 
 COPY --chown=nginx:nginx build/docker/conf/supervisord.conf /etc/supervisord.conf
-COPY --chown=nginx:nginx build/docker/conf/nginx.conf /etc/nginx/nginx.conf
+COPY --chown=nginx:nginx build/docker/conf/nginx.conf /etc/nginx/conf.d/nginx.conf
 COPY --chown=nginx:nginx build/docker/conf/nginx-default.conf /etc/nginx/conf.d/default.conf
 
 ENV DOLI_VERSION 19.0.2
