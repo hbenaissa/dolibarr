@@ -27,10 +27,10 @@ function get_env_value() {
 
 function initDolibarr()
 {
-  local CURRENT_UID=$(id -u www-data)
-  local CURRENT_GID=$(id -g www-data)
-  usermod -u ${WWW_USER_ID} www-data
-  groupmod -g ${WWW_GROUP_ID} www-data
+  local CURRENT_UID=$(id -u nginx)
+  local CURRENT_GID=$(id -g nginx)
+  usermod -u ${WWW_USER_ID} nginx
+  groupmod -g ${WWW_GROUP_ID} nginx
 
   if [[ ! -d /var/www/documents ]]; then
     echo "[INIT] => create volume directory /var/www/documents ..."
@@ -90,7 +90,7 @@ EOF
   fi
 
   echo "[INIT] => update ownership for file in Dolibarr Config ..."
-  chown www-data:www-data /var/www/html/conf/conf.php
+  chown nginx:nginx /var/www/html/conf/conf.php
   if [[ ${DOLI_DB_TYPE} == "pgsql" && ! -f /var/www/documents/install.lock ]]; then
     chmod 600 /var/www/html/conf/conf.php
   else
@@ -100,11 +100,11 @@ EOF
   if [[ ${CURRENT_UID} -ne ${WWW_USER_ID} || ${CURRENT_GID} -ne ${WWW_GROUP_ID} ]]; then
     # Refresh file ownership cause it has changed
     echo "[INIT] => As UID / GID have changed from default, update ownership for files in /var/ww ..."
-    chown -R www-data:www-data /var/www
+    chown -R nginx:nginx /var/www
   else
     # Reducing load on init : change ownership only for volumes declared in docker
     echo "[INIT] => update ownership for files in /var/www/documents ..."
-    chown -R www-data:www-data /var/www/documents
+    chown -R nginx:nginx /var/www/documents
   fi
 }
 
@@ -125,7 +125,7 @@ function waitForDataBase()
 function lockInstallation()
 {
   touch /var/www/documents/install.lock
-  chown www-data:www-data /var/www/documents/install.lock
+  chown nginx:nginx /var/www/documents/install.lock
   chmod 400 /var/www/documents/install.lock
 }
 
@@ -249,7 +249,7 @@ set -e
 
 if [[ ${DOLI_CRON} -eq 1 ]]; then
     echo "PATH=\$PATH:/usr/local/bin" > /etc/cron.d/dolibarr
-    echo "*/5 * * * * root /bin/su www-data -s /bin/sh -c '/var/www/scripts/cron/cron_run_jobs.php ${DOLI_CRON_KEY} ${DOLI_CRON_USER}' > /proc/1/fd/1 2> /proc/1/fd/2" >> /etc/cron.d/dolibarr
+    echo "*/5 * * * * root /bin/su nginx -s /bin/sh -c '/var/www/scripts/cron/cron_run_jobs.php ${DOLI_CRON_KEY} ${DOLI_CRON_USER}' > /proc/1/fd/1 2> /proc/1/fd/2" >> /etc/cron.d/dolibarr
     cron -f
     exit 0
 fi
