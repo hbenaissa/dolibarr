@@ -209,7 +209,7 @@ RUN apk add --update \
 		imagemagick-libs \
 		imagemagick-dev \
 		sqlite \
-	&& docker-php-ext-install  soap  exif bcmath pdo_mysql pcntl \
+	&& docker-php-ext-install soap exif bcmath mysqli pcntl \
 	&& docker-php-ext-configure gd --with-jpeg --with-freetype \
 	&& docker-php-ext-install gd \
 	&& docker-php-ext-install zip \
