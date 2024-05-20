@@ -86,6 +86,8 @@ podLabels: {}
 ## @param podSecurityContext Pod security context
 podSecurityContext:
   fsGroup: 101
+  runAsGroup: 101
+  runAsUser: 101
 
 ## @param priorityClassName Priority class name
 priorityClassName:
@@ -105,10 +107,11 @@ securityContext:
   # readOnlyRootFilesystem: true
   runAsNonRoot: true
   runAsUser: 101
+  allowPrivilegeEscalation: false
 
 containerPorts:
   ## @param containerPorts.http Container port for HTTP
-  http: 80
+  http: 8080
 
 livenessProbe:
   ## @param livenessProbe.enabled Enable liveness probe
