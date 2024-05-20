@@ -295,7 +295,7 @@ RUN ln -s /var/www/html /var/www/htdocs && \
     rm -rf /tmp/* && \
     mkdir -p /var/www/documents && \
     mkdir -p /var/www/html/custom && \
-    chown -R 101:101 /var/www /usr/local/etc/php
+    chown -R 101:101 /var/www /usr/local/etc/php /var/www/documents
 
 VOLUME /var/www/documents
 VOLUME /var/www/html/custom

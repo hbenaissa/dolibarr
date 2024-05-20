@@ -29,10 +29,6 @@ function initDolibarr()
   local CURRENT_UID=$(id -u nginx)
   local CURRENT_GID=$(id -g nginx)
 
-  if [[ ! -d /var/www/documents ]]; then
-    echo "[INIT] => create volume directory /var/www/documents ..."
-    mkdir -p /var/www/documents
-  fi
 
   echo "[INIT] => update PHP Config ..."
   cat > ${PHP_INI_DIR}/conf.d/dolibarr-php.ini << EOF
