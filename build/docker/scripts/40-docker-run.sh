@@ -89,16 +89,6 @@ EOF
   else
     chmod 400 /var/www/html/conf/conf.php
   fi
-
-  if [[ ${CURRENT_UID} -ne ${WWW_USER_ID} || ${CURRENT_GID} -ne ${WWW_GROUP_ID} ]]; then
-    # Refresh file ownership cause it has changed
-    echo "[INIT] => As UID / GID have changed from default, update ownership for files in /var/ww ..."
-    chown -R nginx:nginx /var/www
-  else
-    # Reducing load on init : change ownership only for volumes declared in docker
-    echo "[INIT] => update ownership for files in /var/www/documents ..."
-    chown -R nginx:nginx /var/www/documents
-  fi
 }
 
 function waitForDataBase()
