@@ -212,6 +212,26 @@ COPY --chown=nginx:nginx build/docker/scripts/40-docker-run.sh /docker-entrypoin
 
 RUN chmod +x /docker-entrypoint.d/*.sh /docker-entrypoint.sh 
 
+# Install gd, iconv, mbstring, mysql, soap, sockets, zip, and zlib extensions
+# see example at https://hub.docker.com/_/php/
+RUN apk add --update \
+		freetype-dev \
+		libjpeg-turbo-dev \
+		libpng-dev \
+		libxml2-dev \
+		libzip-dev \
+        icu-dev \
+		openssh-client \
+		imagemagick \
+		imagemagick-libs \
+		imagemagick-dev \
+		sqlite \
+	&& docker-php-ext-install  soap  exif bcmath pdo_mysql pcntl \
+	&& docker-php-ext-configure gd --with-jpeg --with-freetype \
+	&& docker-php-ext-install gd \
+	&& docker-php-ext-install zip \
+    && docker-php-ext-configure calendar && docker-php-ext-install calendar \
+    && docker-php-ext-configure intl && docker-php-ext-install intl 
 ### ----------------------------------------------------------
 ### Setup supervisord, nginx config
 ### ----------------------------------------------------------
@@ -219,16 +239,18 @@ RUN chmod +x /docker-entrypoint.d/*.sh /docker-entrypoint.sh
 RUN set -x && \
     apk update && apk upgrade && \
     apk add --no-cache \
-        supervisor bash mysql-client \
+        supervisor bash mysql-client su-exec \
         && \
     rm -Rf /etc/nginx/nginx.conf && \
     rm -Rf /etc/nginx/conf.d/default.conf && \
     # folders
-    mkdir -p /var/log/supervisor
+    mkdir -p /var/log/supervisord && chown -R nginx:nginx /var/log/supervisord  && \
+    touch /usr/local/supervisord.pid && chown -R nginx:nginx /usr/local/supervisord.pid
 
 COPY --chown=nginx:nginx build/docker/conf/supervisord.conf /etc/supervisord.conf
 COPY --chown=nginx:nginx build/docker/conf/nginx.conf /etc/nginx/nginx.conf
 COPY --chown=nginx:nginx build/docker/conf/nginx-default.conf /etc/nginx/conf.d/default.conf
+COPY --chown=nginx:nginx build/docker/conf/www.conf /usr/local/etc/php-fpm.d/www.conf
 
 ENV DOLI_VERSION 19.0.0
 ENV DOLI_INSTALL_AUTO 1
@@ -273,7 +295,7 @@ RUN ln -s /var/www/html /var/www/htdocs && \
     rm -rf /tmp/* && \
     mkdir -p /var/www/documents && \
     mkdir -p /var/www/html/custom && \
-    chown -R 101:101 /var/www
+    chown -R 101:101 /var/www /usr/local/etc/php /dev/pts/1 /dev/pts/0 /dev/pts/2
 
 VOLUME /var/www/documents
 VOLUME /var/www/html/custom
@@ -292,7 +314,8 @@ RUN chown -R nginx:nginx /usr/share/nginx/html && chmod -R 755 /usr/share/nginx/
     chown -R nginx:nginx /var/cache/nginx && \
     chown -R nginx:nginx /var/log/nginx && \
     chown -R nginx:nginx /etc/nginx/conf.d && \
-    chown -R nginx:nginx /usr/local/etc/
+    chown -R nginx:nginx /usr/local/etc/ /usr/local/php
+    
 
 RUN touch /var/run/nginx.pid && \
     chown -R nginx:nginx /var/run/nginx.pid
