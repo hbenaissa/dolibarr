@@ -63,12 +63,12 @@ spec:
             - /bin/bash
             - -ec
             - |
-              rm -f /var/www/documents/install.lock
+              rm -f /var/www/html/documents/install.lock
           resources:
             {{- toYaml .Values.init.resources | nindent 12 }}
           volumeMounts:
             - name: data
-              mountPath: /var/www/documents
+              mountPath: /var/www/html/documents
       containers:
         - name: dolibarr
           securityContext:
@@ -159,7 +159,7 @@ spec:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
             - name: data
-              mountPath: /var/www/documents
+              mountPath: /var/www/html/documents
         {{- if .Values.dolibarr.cron.enabled }}
         - name: cron
           securityContext:
@@ -213,7 +213,7 @@ spec:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
             - name: data
-              mountPath: /var/www/documents
+              mountPath: /var/www/html/documents
         {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
