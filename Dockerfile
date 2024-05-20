@@ -231,7 +231,8 @@ RUN apk add --update \
 	&& docker-php-ext-install gd \
 	&& docker-php-ext-install zip \
     && docker-php-ext-configure calendar && docker-php-ext-install calendar \
-    && docker-php-ext-configure intl && docker-php-ext-install intl 
+    && docker-php-ext-configure intl && docker-php-ext-install intl \
+    && rm -rf /var/cache/apk/*
 ### ----------------------------------------------------------
 ### Setup supervisord, nginx config
 ### ----------------------------------------------------------
