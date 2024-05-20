@@ -289,7 +289,7 @@ class Form
 					$valuetoshow = ($editvalue ? $editvalue : $value);
 					$ret .= '<textarea id="' . $htmlname . '" name="' . $htmlname . '" wrap="soft" rows="' . (empty($tmp[1]) ? '20' : $tmp[1]) . '"' . ($cols ? ' cols="' . $cols . '"' : 'class="quatrevingtpercent"') . $morealt . '" autofocus>';
 					// textarea convert automatically entities chars into simple chars.
-					// So we convert & into &amp; so a string like 'a &lt; <b>b</b><br>é<br>&lt;script&gt;alert('X');&lt;script&gt;' stay a correct html and is not converted by textarea component when wysiwig is off.
+					// So we convert & into &amp; so a string like 'a &lt; <b>b</b><br>é<br>&lt;script&gt;alert('X');&lt;script&gt;' stay a correct html and is not converted by textarea component when wysiwyg is off.
 					$valuetoshow = str_replace('&', '&amp;', $valuetoshow);
 					$ret .= dol_htmlwithnojs(dol_string_neverthesehtmltags($valuetoshow, array('textarea')));
 					$ret .= '</textarea>';
@@ -2184,7 +2184,7 @@ class Form
 		$userissuperadminentityone = isModEnabled('multicompany') && $conf->entity == 1 && $user->admin && empty($user->entity);
 
 		// Forge request to select users
-		$sql = "SELECT DISTINCT u.rowid, u.lastname as lastname, u.firstname, u.statut as status, u.login, u.admin, u.entity, u.photo";
+		$sql = "SELECT DISTINCT u.rowid, u.lastname as lastname, u.firstname, u.statut as status, u.login, u.admin, u.entity, u.gender, u.photo";
 		if ($showlabelofentity) {
 			$sql .= ", e.label";
 		}
@@ -2276,6 +2276,7 @@ class Form
 					$userstatic->status = $obj->status;
 					$userstatic->entity = $obj->entity;
 					$userstatic->admin = $obj->admin;
+					$userstatic->gender = $obj->gender;
 
 					$disableline = '';
 					if (is_array($enableonly) && count($enableonly) && !in_array($obj->rowid, $enableonly)) {
@@ -2345,6 +2346,7 @@ class Form
 						$out .= ' selected';
 					}
 					$out .= ' data-html="';
+
 					$outhtml = $userstatic->getNomUrl(-3, '', 0, 1, 24, 1, 'login', '', 1) . ' ';
 					if ($showstatus >= 0 && $obj->status == 0) {
 						$outhtml .= '<strike class="opacitymediumxxx">';
@@ -2353,6 +2355,8 @@ class Form
 					if ($showstatus >= 0 && $obj->status == 0) {
 						$outhtml .= '</strike>';
 					}
+					$labeltoshowhtml = $outhtml;
+
 					$out .= dol_escape_htmltag($outhtml);
 					$out .= '">';
 					$out .= $labeltoshow;
@@ -2865,7 +2869,7 @@ class Form
 	 * @param 	int 		$status_purchase 		Purchase status -1=Return all products, 0=Products not on purchase, 1=Products on purchase
 	 * @return  array|string    			        Array of keys for json
 	 */
-	public function select_produits_list($selected = 0, $htmlname = 'productid', $filtertype = '', $limit = 20, $price_level = 0, $filterkey = '', $status = 1, $finished = 2, $outputmode = 0, $socid = 0, $showempty = '1', $forcecombo = 0, $morecss = '', $hidepriceinlabel = 0, $warehouseStatus = '', $status_purchase = -1)
+	public function select_produits_list($selected = 0, $htmlname = 'productid', $filtertype = '', $limit = 20, $price_level = 0, $filterkey = '', $status = 1, $finished = 2, $outputmode = 0, $socid = 0, $showempty = '1', $forcecombo = 0, $morecss = 'maxwidth500', $hidepriceinlabel = 0, $warehouseStatus = '', $status_purchase = -1)
 	{
 		// phpcs:enable
 		global $langs;
@@ -5321,6 +5325,8 @@ class Form
 					$output .= '>';
 					$output .= dol_trunc($cate_arbo[$key]['fulllabel'], $maxlength, 'middle');
 					$output .= '</option>';
+
+					$cate_arbo[$key]['data-html'] = $labeltoshow;
 				}
 			}
 		}
@@ -8216,6 +8222,8 @@ class Form
 	{
 		global $conf, $extrafields, $user;
 
+		//var_dump($objectdesc); debug_print_backtrace();
+
 		$objectdescorig = $objectdesc;
 		$objecttmp = null;
 		$InfoFieldList = array();
@@ -8226,29 +8234,32 @@ class Form
 		if ($objectfield) {	// We must retrieve the objectdesc from the field or extrafield
 			// Example: $objectfield = 'product:options_package' or 'myobject@mymodule:options_myfield'
 			$tmparray = explode(':', $objectfield);
-			$objectdesc = '';
 
 			// Get instance of object from $element
 			$objectforfieldstmp = fetchObjectByElement(0, strtolower($tmparray[0]));
 
-			$reg = array();
-			if (preg_match('/^options_(.*)$/', $tmparray[1], $reg)) {
-				// For a property in extrafields
-				$key = $reg[1];
-				// fetch optionals attributes and labels
-				$extrafields->fetch_name_optionals_label($objectforfieldstmp->table_element);
+			if (is_object($objectforfieldstmp)) {
+				$objectdesc = '';
 
-				if (!empty($extrafields->attributes[$objectforfieldstmp->table_element]['type'][$key]) && $extrafields->attributes[$objectforfieldstmp->table_element]['type'][$key] == 'link') {
-					if (!empty($extrafields->attributes[$objectforfieldstmp->table_element]['param'][$key]['options'])) {
-						$tmpextrafields = array_keys($extrafields->attributes[$objectforfieldstmp->table_element]['param'][$key]['options']);
-						$objectdesc = $tmpextrafields[0];
+				$reg = array();
+				if (preg_match('/^options_(.*)$/', $tmparray[1], $reg)) {
+					// For a property in extrafields
+					$key = $reg[1];
+					// fetch optionals attributes and labels
+					$extrafields->fetch_name_optionals_label($objectforfieldstmp->table_element);
+
+					if (!empty($extrafields->attributes[$objectforfieldstmp->table_element]['type'][$key]) && $extrafields->attributes[$objectforfieldstmp->table_element]['type'][$key] == 'link') {
+						if (!empty($extrafields->attributes[$objectforfieldstmp->table_element]['param'][$key]['options'])) {
+							$tmpextrafields = array_keys($extrafields->attributes[$objectforfieldstmp->table_element]['param'][$key]['options']);
+							$objectdesc = $tmpextrafields[0];
+						}
 					}
-				}
-			} else {
-				// For a property in ->fields
-				if (array_key_exists($tmparray[1], $objectforfieldstmp->fields)) {
-					$objectdesc = $objectforfieldstmp->fields[$tmparray[1]]['type'];	// should be integer:ObjectClass...
-					$objectdesc = preg_replace('/^integer[^:]*:/', '', $objectdesc);
+				} else {
+					// For a property in ->fields
+					if (array_key_exists($tmparray[1], $objectforfieldstmp->fields)) {
+						$objectdesc = $objectforfieldstmp->fields[$tmparray[1]]['type'];
+						$objectdesc = preg_replace('/^integer[^:]*:/', '', $objectdesc);
+					}
 				}
 			}
 		}
@@ -8267,7 +8278,7 @@ class Form
 			$InfoFieldList[3] = preg_replace('/:\w*$/', '', $vartmp);    // take the filter field
 
 			$classname = $InfoFieldList[0];
-			$classpath = $InfoFieldList[1];
+			$classpath = empty($InfoFieldList[1]) ? '' : $InfoFieldList[1];
 			//$addcreatebuttonornot = empty($InfoFieldList[2]) ? 0 : $InfoFieldList[2];
 			$filter = empty($InfoFieldList[3]) ? '' : $InfoFieldList[3];
 			$sortfield = empty($InfoFieldList[4]) ? '' : $InfoFieldList[4];

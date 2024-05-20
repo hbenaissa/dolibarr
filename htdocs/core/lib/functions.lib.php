@@ -179,7 +179,7 @@ function getMultidirOutput($object, $module = '', $forobject = 0, $mode = 'outpu
  */
 function getMultidirTemp($object, $module = '', $forobject = 0)
 {
-	return getMultiDirOutput($object, $module, $forobject, 'temp');
+	return getMultidirOutput($object, $module, $forobject, 'temp');
 }
 
 /**
@@ -193,7 +193,7 @@ function getMultidirTemp($object, $module = '', $forobject = 0)
  */
 function getMultidirVersion($object, $module = '', $forobject = 0)
 {
-	return getMultiDirOutput($object, $module, $forobject, 'version');
+	return getMultidirOutput($object, $module, $forobject, 'version');
 }
 
 
@@ -2203,18 +2203,24 @@ function dol_syslog($message, $level = LOG_INFO, $ident = 0, $suffixinfilename =
 /**
  * Create a dialog with two buttons for export and overwrite of a website
  *
- * @param string $name          Unique identifier for the dialog
- * @param string $label         Title of the dialog
- * @param string $buttonstring  Text for the button that opens the dialog
- * @param string $exportSiteName Name of the "submit" input for site export
- * @param string $overwriteGitUrl URL for the link that triggers the overwrite action in GIT
- * @return string               HTML and JavaScript code for the button and the dialog
+ * @param 	string $name          	Unique identifier for the dialog
+ * @param 	string $label         	Title of the dialog
+ * @param 	string $buttonstring  	Text for the button that opens the dialog
+ * @param 	string $exportSiteName 	Name of the "submit" input for site export
+ * @param 	string $overwriteGitUrl URL for the link that triggers the overwrite action in GIT
+ * @param	Website	$website		Website object
+ * @return 	string               	HTML and JavaScript code for the button and the dialog
  */
-function dolButtonToOpenExportDialog($name, $label, $buttonstring, $exportSiteName, $overwriteGitUrl)
+function dolButtonToOpenExportDialog($name, $label, $buttonstring, $exportSiteName, $overwriteGitUrl, $website)
 {
 	global $langs, $db;
 
 	$form = new Form($db);
+
+	$templatenameforexport = $website->name_template;	// Example 'website_template-corporate'
+	if (empty($templatenameforexport)) {
+		$templatenameforexport = 'website_'.$website->ref;
+	}
 
 	$out = '';
 	$out .= '<input type="button" class="cursorpointer button bordertransp" id="open-dialog-' . $name . '"  value="'.dol_escape_htmltag($buttonstring).'"/>';
@@ -2224,21 +2230,27 @@ function dolButtonToOpenExportDialog($name, $label, $buttonstring, $exportSiteNa
 	$out .= 'jQuery(document).ready(function () {';
 	$out .= '  jQuery("#open-dialog-' . $name . '").click(function () {';
 	$out .= '    var dialogHtml = \'';
-	$out .= '      <div id="custom-dialog-' . $name . '">';
-	$out .= '        <div style="margin-top: 20px;">';
-	$out .= '          <label for="export-site-' . $name . '"><strong>'.$langs->trans("ExportSiteLabel").' : </label>';
-	$out .= '          <button id="export-site-' . $name . '">' . dol_escape_htmltag($langs->trans("ExportSite")) . '</button>';
-	$out .= '        </div>';
-	$out .= '        <div style="margin-top: 20px;">';
-	$out .= '          <h4>'.$langs->trans("ExportSiteGitLabel").' : '.$form->textwithpicto('', $langs->trans("SourceFiles")).'</h4>';
-	$out .= '     		<form action="'.dol_escape_htmltag($overwriteGitUrl).'" method="POST">';
-	$out .= '        		<input type="hidden" name="action" value="overwritesite">';
-	$out .= '        		<input type="hidden" name="token" value="'.newToken().'">';
-	$out .= '          		<input type="text" name="export_path" id="export-path-' . $name . '" placeholder="'.$langs->trans('ExportPath').'" style="width:400px "/>';
-	$out .= '          		<button type="submit" id="overwrite-git-' . $name . '">' . dol_escape_htmltag($langs->trans("ExportIntoGIT")) . '</button>';
-	$out .= '      		</form>';
-	$out .= '        </div>';
-	$out .= '      </div>\';';
+
+	$dialogcontent = '      <div id="custom-dialog-' . $name . '">';
+	$dialogcontent .= '        <div style="margin-top: 20px;">';
+	$dialogcontent .= '          <label for="export-site-' . $name . '"><strong>'.$langs->trans("ExportSiteLabel").'...</label><br>';
+	$dialogcontent .= '          <button class="button smallpaddingimp" id="export-site-' . $name . '">' . dol_escape_htmltag($langs->trans("DownloadZip")) . '</button>';
+	$dialogcontent .= '        </div>';
+	$dialogcontent .= '        <br>';
+	$dialogcontent .= '        <div style="margin-top: 20px;">';
+	$dialogcontent .= '          <strong>'.$langs->trans("ExportSiteGitLabel").' '.$form->textwithpicto('', $langs->trans("SourceFiles"), 1, 'help', '', 0, 3, '').'</strong><br>';
+	$dialogcontent .= '     		<form action="'.dol_escape_htmltag($overwriteGitUrl).'" method="POST">';
+	$dialogcontent .= '        		<input type="hidden" name="action" value="overwritesite">';
+	$dialogcontent .= '        		<input type="hidden" name="token" value="'.newToken().'">';
+	$dialogcontent .= '          		<input type="text" autofocus name="export_path" id="export-path-'.$name.'" placeholder="'.$langs->trans('ExportPath').'" style="width:400px " value="'.dol_escape_htmltag($templatenameforexport).'"/><br>';
+	$dialogcontent .= '          		<button type="submit" class="button smallpaddingimp" id="overwrite-git-' . $name . '">' . dol_escape_htmltag($langs->trans("ExportIntoGIT")) . '</button>';
+	$dialogcontent .= '      		</form>';
+	$dialogcontent .= '        </div>';
+	$dialogcontent .= '      </div>';
+
+	$out .= dol_escape_js($dialogcontent);
+
+	$out .= '\';';
 
 
 	// Add the content of the dialog to the body of the page
@@ -2252,7 +2264,7 @@ function dolButtonToOpenExportDialog($name, $label, $buttonstring, $exportSiteNa
 	$out .= '    jQuery("#custom-dialog-' . $name . '").dialog({';
 	$out .= '      autoOpen: false,';
 	$out .= '      modal: true,';
-	$out .= '      height: 220,';
+	$out .= '      height: 290,';
 	$out .= '      width: "40%",';
 	$out .= '      title: "' . dol_escape_js($label) . '",';
 	$out .= '    });';
@@ -4692,9 +4704,10 @@ function dol_trunc($string, $size = 40, $trunc = 'right', $stringencoding = 'UTF
  * Return the picto for a data type
  *
  * @param 	string		$key		Key
+ * @param	string		$morecss	Add more css to the object
  * @return 	string					Pïcto for the key
  */
-function getPictoForType($key)
+function getPictoForType($key, $morecss = '')
 {
 	// Set array with type -> picto
 	$type2picto = array(
@@ -4728,10 +4741,10 @@ function getPictoForType($key)
 	);
 
 	if (!empty($type2picto[$key])) {
-		return img_picto('', $type2picto[$key], 'class="pictofixedwidth"');
+		return img_picto('', $type2picto[$key], 'class="pictofixedwidth'.($morecss ? ' '.$morecss : '').'"');
 	}
 
-	return img_picto('', 'generic', 'class="pictofixedwidth"');
+	return img_picto('', 'generic', 'class="pictofixedwidth'.($morecss ? ' '.$morecss : '').'"');
 }
 
 
@@ -6580,7 +6593,7 @@ function price($amount, $form = 0, $outlangs = '', $trunc = 1, $rounding = -1, $
 			$currency_code = $conf->currency;
 		}
 
-		$listofcurrenciesbefore = array('AUD', 'CAD', 'CNY', 'COP', 'CLP', 'GBP', 'HKD', 'MXN', 'PEN', 'USD', 'CRC');
+		$listofcurrenciesbefore = array('AUD', 'CAD', 'CNY', 'COP', 'CLP', 'GBP', 'HKD', 'MXN', 'PEN', 'USD', 'CRC', 'ZAR');
 		$listoflanguagesbefore = array('nl_NL');
 		if (in_array($currency_code, $listofcurrenciesbefore) || in_array($outlangs->defaultlang, $listoflanguagesbefore)) {
 			$cursymbolbefore .= $outlangs->getCurrencySymbol($currency_code);
@@ -8111,6 +8124,7 @@ function dol_htmlwithnojs($stringtoencode, $nouseofiframesandbox = 0, $check = '
 					} else {
 						$out = '<?xml encoding="UTF-8"><div class="tricktoremove">'.dol_nl2br($out).'</div>';
 					}
+
 					$dom->loadHTML($out, LIBXML_HTML_NODEFDTD | LIBXML_ERR_NONE | LIBXML_HTML_NOIMPLIED | LIBXML_NONET | LIBXML_NOWARNING | LIBXML_NOERROR | LIBXML_NOXMLDECL);
 					$out = trim($dom->saveHTML());
 
@@ -8181,7 +8195,6 @@ function dol_htmlwithnojs($stringtoencode, $nouseofiframesandbox = 0, $check = '
 				},
 				$out
 			);
-
 
 			// Now we remove all remaining HTML entities starting with a number. We don't want such entities.
 			$out = preg_replace('/&#x?[0-9]+/i', '', $out);	// For example if we have j&#x61vascript with an entities without the ; to hide the 'a' of 'javascript'.
@@ -8640,6 +8653,7 @@ function getCommonSubstitutionArray($outputlangs, $onlykey = 0, $exclude = null,
 				$substitutionarray['__THIRDPARTY_CODE_CLIENT__'] = '__THIRDPARTY_CODE_CLIENT__';
 				$substitutionarray['__THIRDPARTY_CODE_FOURNISSEUR__'] = '__THIRDPARTY_CODE_FOURNISSEUR__';
 				$substitutionarray['__THIRDPARTY_EMAIL__'] = '__THIRDPARTY_EMAIL__';
+				//$substitutionarray['__THIRDPARTY_EMAIL_URLENCODED__'] = '__THIRDPARTY_EMAIL_URLENCODED__';	// We hide this one
 				$substitutionarray['__THIRDPARTY_PHONE__'] = '__THIRDPARTY_PHONE__';
 				$substitutionarray['__THIRDPARTY_FAX__'] = '__THIRDPARTY_FAX__';
 				$substitutionarray['__THIRDPARTY_ADDRESS__'] = '__THIRDPARTY_ADDRESS__';
@@ -8651,10 +8665,10 @@ function getCommonSubstitutionArray($outputlangs, $onlykey = 0, $exclude = null,
 				$substitutionarray['__THIRDPARTY_IDPROF4__'] = '__THIRDPARTY_IDPROF4__';
 				$substitutionarray['__THIRDPARTY_IDPROF5__'] = '__THIRDPARTY_IDPROF5__';
 				$substitutionarray['__THIRDPARTY_IDPROF6__'] = '__THIRDPARTY_IDPROF6__';
-				$substitutionarray['__MYCOMPANY_PROFID7__'] = '__MYCOMPANY_PROFID7__';
-				$substitutionarray['__MYCOMPANY_PROFID8__'] = '__MYCOMPANY_PROFID8__';
-				$substitutionarray['__MYCOMPANY_PROFID9__'] = '__MYCOMPANY_PROFID9__';
-				$substitutionarray['__MYCOMPANY_PROFID10__'] = '__MYCOMPANY_PROFID10__';
+				$substitutionarray['__THIRDPARTY_IDPROF7__'] = '__THIRDPARTY_IDPROF7__';
+				$substitutionarray['__THIRDPARTY_IDPROF8__'] = '__THIRDPARTY_IDPROF8__';
+				$substitutionarray['__THIRDPARTY_IDPROF9__'] = '__THIRDPARTY_IDPROF9__';
+				$substitutionarray['__THIRDPARTY_IDPROF10__'] = '__THIRDPARTY_IDPROF10__';
 				$substitutionarray['__THIRDPARTY_TVAINTRA__'] = '__THIRDPARTY_TVAINTRA__';
 				$substitutionarray['__THIRDPARTY_NOTE_PUBLIC__'] = '__THIRDPARTY_NOTE_PUBLIC__';
 				$substitutionarray['__THIRDPARTY_NOTE_PRIVATE__'] = '__THIRDPARTY_NOTE_PRIVATE__';
@@ -8809,6 +8823,7 @@ function getCommonSubstitutionArray($outputlangs, $onlykey = 0, $exclude = null,
 				$substitutionarray['__THIRDPARTY_CODE_CLIENT__'] = (is_object($object) ? $object->code_client : '');
 				$substitutionarray['__THIRDPARTY_CODE_FOURNISSEUR__'] = (is_object($object) ? $object->code_fournisseur : '');
 				$substitutionarray['__THIRDPARTY_EMAIL__'] = (is_object($object) ? $object->email : '');
+				$substitutionarray['__THIRDPARTY_EMAIL_URLENCODED__'] = urlencode(is_object($object) ? $object->email : '');
 				$substitutionarray['__THIRDPARTY_PHONE__'] = (is_object($object) ? dol_print_phone($object->phone) : '');
 				$substitutionarray['__THIRDPARTY_FAX__'] = (is_object($object) ? dol_print_phone($object->fax) : '');
 				$substitutionarray['__THIRDPARTY_ADDRESS__'] = (is_object($object) ? $object->address : '');
@@ -8832,6 +8847,7 @@ function getCommonSubstitutionArray($outputlangs, $onlykey = 0, $exclude = null,
 				$substitutionarray['__THIRDPARTY_CODE_CLIENT__'] = (is_object($object->thirdparty) ? $object->thirdparty->code_client : '');
 				$substitutionarray['__THIRDPARTY_CODE_FOURNISSEUR__'] = (is_object($object->thirdparty) ? $object->thirdparty->code_fournisseur : '');
 				$substitutionarray['__THIRDPARTY_EMAIL__'] = (is_object($object->thirdparty) ? $object->thirdparty->email : '');
+				$substitutionarray['__THIRDPARTY_EMAIL_URLENCODED__'] = urlencode(is_object($object->thirdparty) ? $object->thirdparty->email : '');
 				$substitutionarray['__THIRDPARTY_PHONE__'] = (is_object($object->thirdparty) ? dol_print_phone($object->thirdparty->phone) : '');
 				$substitutionarray['__THIRDPARTY_FAX__'] = (is_object($object->thirdparty) ? dol_print_phone($object->thirdparty->fax) : '');
 				$substitutionarray['__THIRDPARTY_ADDRESS__'] = (is_object($object->thirdparty) ? $object->thirdparty->address : '');
@@ -9612,10 +9628,10 @@ function setEventMessage($mesgs, $style = 'mesgs', $noduplicate = 0)
  *	Set event messages in dol_events session object. Will be output by calling dol_htmloutput_events.
  *  Note: Calling dol_htmloutput_events is done into pages by standard llxFooter() function.
  *
- *	@param	string|null		$mesg		Message string
- *	@param	string[]|null	$mesgs		Message array
- *  @param  string			$style     	Which style to use ('mesgs' by default, 'warnings', 'errors')
- *  @param	string			$messagekey	A key to be used to allow the feature "Never show this message again"
+ *	@param	string|null		$mesg			Message string
+ *	@param	string[]|null	$mesgs			Message array
+ *  @param  string			$style     		Which style to use ('mesgs' by default, 'warnings', 'errors')
+ *  @param	string			$messagekey		A key to be used to allow the feature "Never show this message during this session again"
  *  @param	int				$noduplicate	1 means we do not add the message if already present in session stack
  *  @return	void
  *  @see	dol_htmloutput_events()
@@ -12095,7 +12111,7 @@ function dolGetButtonAction($label, $text = '', $actionType = 'default', $url = 
 {
 	global $hookmanager, $action, $object, $langs;
 
-	// If $url is an array, we must build a dropdown button
+	// If $url is an array, we must build a dropdown button or recursively iterate over each value
 	if (is_array($url)) {
 		// Loop on $url array to remove entries of disabled modules
 		foreach ($url as $key => $subbutton) {
@@ -12105,6 +12121,24 @@ function dolGetButtonAction($label, $text = '', $actionType = 'default', $url = 
 		}
 
 		$out = '';
+
+		if (isset($params["areDropdownButtons"]) && $params["areDropdownButtons"] === false) {
+			foreach ($url as $button) {
+				if (!empty($button['lang'])) {
+					$langs->load($button['lang']);
+				}
+				$label = $langs->trans($button['label']);
+				$text = $button['text'] ?? '';
+				$actionType = $button['actionType'] ?? '';
+				$tmpUrl = DOL_URL_ROOT.$button['url'].(empty($params['backtopage']) ? '' : '&amp;backtopage='.urlencode($params['backtopage']));
+				$id = $button['$id'] ?? '';
+				$userRight = $button['perm'] ?? 1;
+				$params = $button['$params'] ?? [];
+
+				$out .= dolGetButtonAction($label, $text, $actionType, $tmpUrl, $id, $userRight, $params);
+			}
+			return $out;
+		}
 
 		if (count($url) > 1) {
 			$out .= '<div class="dropdown inline-block dropdown-holder">';
@@ -12398,7 +12432,7 @@ function dolGetButtonTitle($label, $helpText = '', $iconClass = 'fa fa-file', $u
  *                                    'action', 'facture', 'project', 'project_task' or
  *                                    'myobject@mymodule' (or old syntax 'mymodule_myobject' like 'project_task')
  * @return  array{module:string,element:string,table_element:string,subelement:string,classpath:string,classfile:string,classname:string,dir_output:string}		array('module'=>, 'classpath'=>, 'element'=>, 'subelement'=>, 'classfile'=>, 'classname'=>, 'dir_output'=>)
- * @see fetchObjectByElement(), getMultiDirOutput()
+ * @see fetchObjectByElement(), getMultidirOutput()
  */
 function getElementProperties($elementType)
 {
@@ -12441,7 +12475,7 @@ function getElementProperties($elementType)
 		}
 	}
 	// For compatibility and to work with non standard path
-	if ($elementType == "action") {
+	if ($elementType == "action" || $elementType == "actioncomm") {
 		$classpath = 'comm/action/class';
 		$subelement = 'Actioncomm';
 		$module = 'agenda';
@@ -12764,6 +12798,9 @@ function fetchObjectByElement($element_id, $element_type, $element_ref = '', $us
 	} else {
 		$ismodenabled = isModEnabled($element_prop['module']);
 	}
+	//var_dump('element_type='.$element_type);
+	//var_dump($element_prop);
+	//var_dump($element_prop['module'].' '.$ismodenabled);
 
 	if (is_array($element_prop) && (empty($element_prop['module']) || $ismodenabled)) {
 		if ($useCache === 1
