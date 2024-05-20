@@ -312,5 +312,4 @@ USER nginx
 ### CMD
 ### ----------------------------------------------------------
 
-#CMD ["nginx", "-g", "daemon off;"]
-
+CMD ["nginx", "-g", "daemon off;"]

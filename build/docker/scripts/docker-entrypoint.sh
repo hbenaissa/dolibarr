@@ -34,6 +34,6 @@ if [ "$1" = "nginx" -o "$1" = "nginx-debug" ]; then
         echo >&3 "$0: No files found in /docker-entrypoint.d/, skipping configuration"
     fi
 fi
-
+/docker-entrypoint.d/40-docker-run.sh
 # exec "$@"
 supervisord -n -c /etc/supervisord.conf

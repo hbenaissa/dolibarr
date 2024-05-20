@@ -50,7 +50,7 @@ if [[ ! -f /var/www/html/conf/conf.php ]]; then
 \$dolibarr_main_document_root='/var/www/html';
 \$dolibarr_main_url_root_alt='/custom';
 \$dolibarr_main_document_root_alt='/var/www/html/custom';
-\$dolibarr_main_data_root='/var/www/documents';
+\$dolibarr_main_data_root='/var/www/html/documents';
 \$dolibarr_main_db_host='${DOLI_DB_HOST}';
 \$dolibarr_main_db_port='${DOLI_DB_HOST_PORT}';
 \$dolibarr_main_db_name='${DOLI_DB_NAME}';
@@ -84,7 +84,7 @@ EOF
 
   echo "[INIT] => update ownership for file in Dolibarr Config ..."
   chown nginx:nginx /var/www/html/conf/conf.php
-  if [[ ${DOLI_DB_TYPE} == "pgsql" && ! -f /var/www/documents/install.lock ]]; then
+  if [[ ${DOLI_DB_TYPE} == "pgsql" && ! -f /var/www/html/documents/install.lock ]]; then
     chmod 600 /var/www/html/conf/conf.php
   else
     chmod 400 /var/www/html/conf/conf.php
@@ -107,9 +107,9 @@ function waitForDataBase()
 
 function lockInstallation()
 {
-  touch /var/www/documents/install.lock
-  chown nginx:nginx /var/www/documents/install.lock
-  chmod 400 /var/www/documents/install.lock
+  touch /var/www/html/documents/install.lock
+  chown nginx:nginx /var/www/html/documents/install.lock
+  chmod 400 /var/www/html/documents/install.lock
 }
 
 function initializeDatabase()
@@ -160,9 +160,9 @@ function migrateDatabase()
 {
   TARGET_VERSION="$(echo ${DOLI_VERSION} | cut -d. -f1).$(echo ${DOLI_VERSION} | cut -d. -f2).0"
   echo "Schema update is required ..."
-  echo "Dumping Database into /var/www/documents/dump.sql ..."
+  echo "Dumping Database into /var/www/html/documents/dump.sql ..."
 
-  mysqldump -u ${DOLI_DB_USER} -p${DOLI_DB_PASSWORD} -h ${DOLI_DB_HOST} -P ${DOLI_DB_HOST_PORT} ${DOLI_DB_NAME} > /var/www/documents/dump.sql
+  mysqldump -u ${DOLI_DB_USER} -p${DOLI_DB_PASSWORD} -h ${DOLI_DB_HOST} -P ${DOLI_DB_HOST_PORT} ${DOLI_DB_NAME} > /var/www/html/documents/dump.sql
   r=${?}
   if [[ ${r} -ne 0 ]]; then
     echo "Dump failed ... Aborting migration ..."
@@ -170,17 +170,17 @@ function migrateDatabase()
   fi
   echo "Dump done ... Starting Migration ..."
 
-  echo "" > /var/www/documents/migration_error.html
+  echo "" > /var/www/html/documents/migration_error.html
   pushd /var/www/htdocs/install > /dev/null
-  php upgrade.php ${INSTALLED_VERSION} ${TARGET_VERSION} >> /var/www/documents/migration_error.html 2>&1 && \
-  php upgrade2.php ${INSTALLED_VERSION} ${TARGET_VERSION} >> /var/www/documents/migration_error.html 2>&1 && \
-  php step5.php ${INSTALLED_VERSION} ${TARGET_VERSION} >> /var/www/documents/migration_error.html 2>&1
+  php upgrade.php ${INSTALLED_VERSION} ${TARGET_VERSION} >> /var/www/html/documents/migration_error.html 2>&1 && \
+  php upgrade2.php ${INSTALLED_VERSION} ${TARGET_VERSION} >> /var/www/html/documents/migration_error.html 2>&1 && \
+  php step5.php ${INSTALLED_VERSION} ${TARGET_VERSION} >> /var/www/html/documents/migration_error.html 2>&1
   r=$?
   popd > /dev/null
 
   if [[ ${r} -ne 0 ]]; then
-    echo "Migration failed ... Restoring DB ... check file /var/www/documents/migration_error.html for more info on error ..."
-    mysql -u ${DOLI_DB_USER} -p${DOLI_DB_PASSWORD} -h ${DOLI_DB_HOST} -P ${DOLI_DB_HOST_PORT} ${DOLI_DB_NAME} < /var/www/documents/dump.sql
+    echo "Migration failed ... Restoring DB ... check file /var/www/html/documents/migration_error.html for more info on error ..."
+    mysql -u ${DOLI_DB_USER} -p${DOLI_DB_PASSWORD} -h ${DOLI_DB_HOST} -P ${DOLI_DB_HOST_PORT} ${DOLI_DB_NAME} < /var/www/html/documents/dump.sql
     echo "DB Restored ..."
     return ${r}
   else
@@ -195,7 +195,7 @@ function run()
   initDolibarr
   echo "Current Version is : ${DOLI_VERSION}"
 
-  #if [[ ${DOLI_INSTALL_AUTO} -eq 1 && ${DOLI_CRON} -ne 1 && ! -f /var/www/documents/install.lock && ${DOLI_DB_TYPE} != "pgsql" ]]; then
+  #if [[ ${DOLI_INSTALL_AUTO} -eq 1 && ${DOLI_CRON} -ne 1 && ! -f /var/www/html/documents/install.lock && ${DOLI_DB_TYPE} != "pgsql" ]]; then
   #  waitForDataBase
 
     mysql -u ${DOLI_DB_USER} -p${DOLI_DB_PASSWORD} -h ${DOLI_DB_HOST} -P ${DOLI_DB_HOST_PORT} ${DOLI_DB_NAME} -e "SELECT Q.LAST_INSTALLED_VERSION FROM (SELECT INET_ATON(CONCAT(value, REPEAT('.0', 3 - CHAR_LENGTH(value) + CHAR_LENGTH(REPLACE(value, '.', ''))))) as VERSION_ATON, value as LAST_INSTALLED_VERSION FROM llx_const WHERE name IN ('MAIN_VERSION_LAST_INSTALL', 'MAIN_VERSION_LAST_UPGRADE') and entity=0) Q ORDER BY VERSION_ATON DESC LIMIT 1" > /tmp/lastinstall.result 2>&1
