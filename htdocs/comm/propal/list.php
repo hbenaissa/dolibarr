@@ -1,23 +1,24 @@
 <?php
-/* Copyright (C) 2001-2007 Rodolphe Quiedeville		<rodolphe@quiedeville.org>
- * Copyright (C) 2004-2016 Laurent Destailleur		<eldy@users.sourceforge.net>
- * Copyright (C) 2004      Eric Seigne				<eric.seigne@ryxeo.com>
- * Copyright (C) 2005      Marc Barilley / Ocebo	<marc@ocebo.com>
- * Copyright (C) 2005-2013 Regis Houssin			<regis.houssin@inodbox.com>
- * Copyright (C) 2006      Andre Cianfarani			<acianfa@free.fr>
- * Copyright (C) 2010-2011 Juanjo Menent			<jmenent@2byte.es>
- * Copyright (C) 2010-2022 Philippe Grand			<philippe.grand@atoo-net.com>
- * Copyright (C) 2012      Christophe Battarel		<christophe.battarel@altairis.fr>
- * Copyright (C) 2013      Cédric Salvador			<csalvador@gpcsolutions.fr>
- * Copyright (C) 2015      Jean-François Ferry		<jfefe@aternatik.fr>
- * Copyright (C) 2016-2021 Ferran Marcet			<fmarcet@2byte.es>
- * Copyright (C) 2017-2023 Charlene Benke			<charlene@patas-monkey.com>
- * Copyright (C) 2018	   Nicolas ZABOURI			<info@inovea-conseil.com>
- * Copyright (C) 2019-2021 Alexandre Spangaro		<aspangaro@open-dsi.fr>
- * Copyright (C) 2021	   Anthony Berton			<anthony.berton@bb2a.fr>
- * Copyright (C) 2021-2024  Frédéric France			<frederic.france@free.fr>
- * Copyright (C) 2022      Josep Lluís Amador		<joseplluis@lliuretic.cat>
+/* Copyright (C) 2001-2007	Rodolphe Quiedeville		<rodolphe@quiedeville.org>
+ * Copyright (C) 2004-2016	Laurent Destailleur			<eldy@users.sourceforge.net>
+ * Copyright (C) 2004		Eric Seigne					<eric.seigne@ryxeo.com>
+ * Copyright (C) 2005		Marc Barilley / Ocebo		<marc@ocebo.com>
+ * Copyright (C) 2005-2013	Regis Houssin				<regis.houssin@inodbox.com>
+ * Copyright (C) 2006		Andre Cianfarani			<acianfa@free.fr>
+ * Copyright (C) 2010-2011	Juanjo Menent				<jmenent@2byte.es>
+ * Copyright (C) 2010-2022	Philippe Grand				<philippe.grand@atoo-net.com>
+ * Copyright (C) 2012		Christophe Battarel			<christophe.battarel@altairis.fr>
+ * Copyright (C) 2013		Cédric Salvador				<csalvador@gpcsolutions.fr>
+ * Copyright (C) 2015		Jean-François Ferry			<jfefe@aternatik.fr>
+ * Copyright (C) 2016-2021	Ferran Marcet				<fmarcet@2byte.es>
+ * Copyright (C) 2017-2023	Charlene Benke				<charlene@patas-monkey.com>
+ * Copyright (C) 2018		Nicolas ZABOURI				<info@inovea-conseil.com>
+ * Copyright (C) 2019-2024	Alexandre Spangaro			<alexandre@inovea-conseil.com>
+ * Copyright (C) 2021		Anthony Berton				<anthony.berton@bb2a.fr>
+ * Copyright (C) 2021-2024  Frédéric France				<frederic.france@free.fr>
+ * Copyright (C) 2022		Josep Lluís Amador			<joseplluis@lliuretic.cat>
  * Copyright (C) 2024		MDW							<mdeweerd@users.noreply.github.com>
+ * Copyright (C) 2024		William Mead			    <william.mead@manchenumerique.fr>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -57,6 +58,14 @@ if (isModEnabled('category')) {
 	require_once DOL_DOCUMENT_ROOT.'/core/class/html.formcategory.class.php';
 }
 
+/**
+ * @var Conf $conf
+ * @var DoliDB $db
+ * @var HookManager $hookmanager
+ * @var Translate $langs
+ * @var User $user
+ */
+
 // Load translation files required by the page
 $langs->loadLangs(array('companies', 'propal', 'compta', 'bills', 'orders', 'products', 'deliveries', 'categories'));
 if (isModEnabled("shipping")) {
@@ -77,7 +86,7 @@ $optioncss  = GETPOST('optioncss', 'alpha');
 $mode 		= GETPOST('mode', 'alpha');
 
 // Search Fields
-$search_all = trim((GETPOST('search_all', 'alphanohtml') != '') ? GETPOST('search_all', 'alphanohtml') : GETPOST('sall', 'alphanohtml'));
+$search_all = trim(GETPOST('search_all', 'alphanohtml'));
 $search_user 	= GETPOSTINT('search_user');
 if ($search_user == -1) {
 	$search_user = 0;
@@ -144,6 +153,13 @@ $search_date_signature_endyear = GETPOSTINT('search_date_signature_endyear');
 $search_date_signature_start = dol_mktime(0, 0, 0, $search_date_signature_startmonth, $search_date_signature_startday, $search_date_signature_startyear);
 $search_date_signature_end = dol_mktime(23, 59, 59, $search_date_signature_endmonth, $search_date_signature_endday, $search_date_signature_endyear);
 $search_status = GETPOST('search_status', 'alpha');
+$search_note_public = GETPOST('search_note_public', 'alpha');
+
+$search_option = GETPOST('search_option', 'alpha');
+if ($search_option == 'late') {
+	$search_status = '1';
+	$object_statut = '1';
+}
 
 // Pagination
 $limit = GETPOSTINT('limit') ? GETPOSTINT('limit') : $conf->liste_limit;
@@ -176,13 +192,13 @@ if (!empty($socid)) {
 	$module = 'societe';
 	$dbtable = '&societe';
 }
+$hookmanager->initHooks(array('propallist'));
 $result = restrictedArea($user, $module, $objectid, $dbtable);
 
 $diroutputmassaction = $conf->propal->multidir_output[$conf->entity].'/temp/massgeneration/'.$user->id;
 
-// Initialize technical object to manage hooks of page. Note that conf->hooks_modules contains array of hook context
+// Initialize a technical object to manage hooks of page. Note that conf->hooks_modules contains an array of hook context
 $object = new Propal($db);
-$hookmanager->initHooks(array('propallist'));
 $extrafields = new ExtraFields($db);
 
 // fetch optionals attributes and labels
@@ -256,22 +272,22 @@ $arrayfields = array(
 
 // List of fields to search into when doing a "search in all"
 /*$fieldstosearchall = array();
-foreach ($object->fields as $key => $val) {
-	if (!empty($val['searchall'])) {
-		$fieldstosearchall['t.'.$key] = $val['label'];
-	}
-}*/
+ foreach ($object->fields as $key => $val) {
+ if (!empty($val['searchall'])) {
+ $fieldstosearchall['t.'.$key] = $val['label'];
+ }
+ }*/
 
 // Definition of array of fields for columns
 /*$arrayfields = array();
 foreach ($object->fields as $key => $val) {
 	// If $val['visible']==0, then we never show the field
 	if (!empty($val['visible'])) {
-		$visible = (int) dol_eval($val['visible'], 1);
+		$visible = (int) dol_eval((string) $val['visible'], 1);
 		$arrayfields['t.'.$key] = array(
 			'label'=>$val['label'],
 			'checked'=>(($visible < 0) ? 0 : 1),
-			'enabled'=>(abs($visible) != 3 && (int) dol_eval($val['enabled'], 1)),
+			'enabled'=>(abs($visible) != 3 && (bool) dol_eval($val['enabled'], 1)),
 			'position'=>$val['position'],
 			'help'=> isset($val['help']) ? $val['help'] : ''
 		);
@@ -303,6 +319,7 @@ if (getDolGlobalString('MAIN_USE_ADVANCED_PERMS')) {
 /*
  * Actions
  */
+$error = 0;
 
 if (GETPOST('cancel', 'alpha')) {
 	$action = 'list';
@@ -311,6 +328,9 @@ if (GETPOST('cancel', 'alpha')) {
 if (!GETPOST('confirmmassaction', 'alpha') && $massaction != 'presend' && $massaction != 'confirm_presend') {
 	$massaction = '';
 }
+
+$objectclass = null;
+$search_code_client = '';
 
 $parameters = array('socid' => $socid, 'arrayfields' => &$arrayfields);
 $reshook = $hookmanager->executeHooks('doActions', $parameters, $object, $action); // Note that $action and $object may have been modified by some hooks
@@ -374,6 +394,7 @@ if (empty($reshook)) {
 		$search_date_delivery_start = '';
 		$search_date_delivery_end = '';
 		$search_availability = '';
+		$search_option = '';
 		$search_status = '';
 		$search_categ_cus = 0;
 		$search_fk_cond_reglement = '';
@@ -390,6 +411,7 @@ if (empty($reshook)) {
 		$search_date_signature_end = '';
 		$toselect = array();
 		$search_array_options = array();
+		$socid = 0;
 	}
 
 	// Mass actions
@@ -403,10 +425,9 @@ if ($action == 'validate' && $permissiontovalidate) {
 	if (GETPOST('confirm') == 'yes') {
 		$tmpproposal = new Propal($db);
 		$db->begin();
-		$error = 0;
 		foreach ($toselect as $checked) {
 			if ($tmpproposal->fetch($checked) > 0) {
-				if ($tmpproposal->statut == $tmpproposal::STATUS_DRAFT) {
+				if ($tmpproposal->status == $tmpproposal::STATUS_DRAFT) {
 					if ($tmpproposal->valid($user) > 0) {
 						setEventMessages($langs->trans('hasBeenValidated', $tmpproposal->ref), null, 'mesgs');
 					} else {
@@ -435,11 +456,10 @@ if ($action == "sign" && $permissiontoclose) {
 	if (GETPOST('confirm') == 'yes') {
 		$tmpproposal = new Propal($db);
 		$db->begin();
-		$error = 0;
 		foreach ($toselect as $checked) {
 			if ($tmpproposal->fetch($checked) > 0) {
-				if ($tmpproposal->statut == $tmpproposal::STATUS_VALIDATED) {
-					$tmpproposal->statut = $tmpproposal::STATUS_SIGNED;
+				if ($tmpproposal->status == $tmpproposal::STATUS_VALIDATED) {
+					$tmpproposal->status = $tmpproposal::STATUS_SIGNED;
 					if ($tmpproposal->closeProposal($user, $tmpproposal::STATUS_SIGNED) >= 0) {
 						setEventMessages($tmpproposal->ref." ".$langs->trans('Signed'), null, 'mesgs');
 					} else {
@@ -467,11 +487,10 @@ if ($action == "nosign" && $permissiontoclose) {
 	if (GETPOST('confirm') == 'yes') {
 		$tmpproposal = new Propal($db);
 		$db->begin();
-		$error = 0;
 		foreach ($toselect as $checked) {
 			if ($tmpproposal->fetch($checked) > 0) {
-				if ($tmpproposal->statut == $tmpproposal::STATUS_VALIDATED || (getDolGlobalString('PROPAL_SKIP_ACCEPT_REFUSE') && $tmpproposal->statut == $tmpproposal::STATUS_DRAFT)) {
-					$tmpproposal->statut = $tmpproposal::STATUS_NOTSIGNED;
+				if ($tmpproposal->status == $tmpproposal::STATUS_VALIDATED || (getDolGlobalString('PROPAL_SKIP_ACCEPT_REFUSE') && $tmpproposal->statut == $tmpproposal::STATUS_DRAFT)) {
+					$tmpproposal->status = $tmpproposal::STATUS_NOTSIGNED;
 					if ($tmpproposal->closeProposal($user, $tmpproposal::STATUS_NOTSIGNED) > 0) {
 						setEventMessage($tmpproposal->ref." ".$langs->trans('NoSigned'), 'mesgs');
 					} else {
@@ -496,7 +515,7 @@ if ($action == "nosign" && $permissiontoclose) {
 }
 
 // Closed records
-if (!$error && $massaction === 'setbilled' && $permissiontoclose) {
+if (!$error && $massaction === 'setbilled' && $permissiontoclose && $objectclass !== null) {
 	$db->begin();
 
 	$objecttmp = new $objectclass($db);
@@ -551,7 +570,7 @@ $varpage = empty($contextpage) ? $_SERVER["PHP_SELF"] : $contextpage;
 $selectedfields = $form->multiSelectArrayWithCheckbox('selectedfields', $arrayfields, $varpage); // This also change content of $arrayfields
 
 $sql = 'SELECT';
-if ($search_all > 0) {
+if ($search_all !== '') {
 	$sql = 'SELECT DISTINCT';
 }
 $sql .= ' s.rowid as socid, s.nom as name, s.name_alias as alias, s.email, s.phone, s.fax , s.address, s.town, s.zip, s.fk_pays, s.client, s.fournisseur, s.code_client,';
@@ -633,15 +652,28 @@ if ($search_project) {
 if ($search_availability) {
 	$sql .= " AND p.fk_availability IN (".$db->sanitize($db->escape($search_availability)).')';
 }
+$societe_add_ref_in_list = getDolGlobalInt('SOCIETE_ADD_REF_IN_LIST');
 if (empty($arrayfields['s.name_alias']['checked']) && $search_societe) {
-	$sql .= natural_search(array("s.nom", "s.name_alias"), $search_societe);
+	if ($societe_add_ref_in_list == 1) {
+		$sql .= natural_search(array("s.nom", "s.name_alias", "s.code_client"), $search_societe);
+	} else {
+		$sql .= natural_search(array("s.nom", "s.name_alias"), $search_societe);
+	}
 } else {
 	if ($search_societe) {
-		$sql .= natural_search('s.nom', $search_societe);
+		if ($societe_add_ref_in_list == 1) {
+			$sql .= natural_search(array('s.nom', 's.code_client'), $search_societe);
+		} else {
+			$sql .= natural_search('s.nom', $search_societe);
+		}
 	}
 	if ($search_societe_alias) {
 		$sql .= natural_search('s.name_alias', $search_societe_alias);
 	}
+}
+// Rechercher dans code_client si SOCIETE_ADD_REF_IN_LIST est égal à 1
+if ($societe_add_ref_in_list == 1 && $search_code_client && !$search_societe) {
+	$sql .= natural_search('s.code_client', $search_code_client);
 }
 if ($search_login) {
 	$sql .= natural_search(array("u.login", "u.firstname", "u.lastname"), $search_login);
@@ -717,6 +749,9 @@ if ($search_date_signature_start) {
 }
 if ($search_date_signature_end) {
 	$sql .= " AND p.date_signature <= '".$db->idate($search_date_signature_end)."'";
+}
+if ($search_note_public) {
+	$sql .= " AND p.note_public LIKE '%".$db->escape($db->escapeforlike($search_note_public))."%'";
 }
 // Search on user
 if ($search_user > 0) {
@@ -795,6 +830,9 @@ if (!empty($searchCategoryProductList)) {
 		}
 	}
 }
+if ($search_option == 'late') {
+	$sql .= " AND p.fin_validite < '".$db->idate(dol_now() - $conf->propal->cloture->warning_delay)."'";
+}
 // Add where from extra fields
 include DOL_DOCUMENT_ROOT.'/core/tpl/extrafields_list_search_sql.tpl.php';
 //print $sql;
@@ -871,7 +909,7 @@ if ($num == 1 && getDolGlobalString('MAIN_SEARCH_DIRECT_OPEN_IF_ONLY_ONE') && $s
 }
 
 $help_url = 'EN:Commercial_Proposals|FR:Proposition_commerciale|ES:Presupuestos';
-llxHeader('', $title, $help_url);
+llxHeader('', $title, $help_url, '', 0, 0, '', '', '', 'bodyforlist');
 
 $param = '&search_status='.urlencode($search_status);
 if (!empty($mode)) {
@@ -959,7 +997,7 @@ if ($search_user > 0) {
 	$param .= '&search_user='.urlencode((string) ($search_user));
 }
 if ($search_sale > 0) {
-	$param .= '&search_sale='.urlencode($search_sale);
+	$param .= '&search_sale='.urlencode((string) $search_sale);
 }
 if ($search_montant_ht) {
 	$param .= '&search_montant_ht='.urlencode($search_montant_ht);
@@ -1052,7 +1090,7 @@ if ($search_date_signature_endyear) {
 // Add $param from extra fields
 include DOL_DOCUMENT_ROOT.'/core/tpl/extrafields_list_search_param.tpl.php';
 // Add $param from hooks
-$parameters = array();
+$parameters = array('param' => &$param);
 $reshook = $hookmanager->executeHooks('printFieldListSearchParam', $parameters, $object, $action); // Note that $action and $object may have been modified by hook
 $param .= $hookmanager->resPrint;
 
@@ -1102,6 +1140,7 @@ print '<input type="hidden" name="action" value="list">';
 print '<input type="hidden" name="sortfield" value="'.$sortfield.'">';
 print '<input type="hidden" name="sortorder" value="'.$sortorder.'">';
 print '<input type="hidden" name="contextpage" value="'.$contextpage.'">';
+print '<input type="hidden" name="socid" value="'.$socid.'">';
 print '<input type="hidden" name="mode"value="'.$mode.'">';
 
 print_barre_liste($title, $page, $_SERVER["PHP_SELF"], $param, $sortfield, $sortorder, $massactionbutton, $num, $nbtotalofrecords, 'propal', 0, $newcardbutton, '', $limit, 0, 0, 1);
@@ -1226,7 +1265,7 @@ if (!empty($arrayfields['pr.title']['checked'])) {
 }
 if (!empty($arrayfields['s.nom']['checked'])) {
 	print '<td class="liste_titre" align="left">';
-	print '<input class="flat maxwidth100" type="text" name="search_societe" value="'.dol_escape_htmltag($search_societe).'">';
+	print '<input class="flat maxwidth100" type="text" name="search_societe" value="'.dol_escape_htmltag($search_societe).'"'.($socid > 0 ? " disabled" : "").'>';
 	print '</td>';
 }
 if (!empty($arrayfields['s.name_alias']['checked'])) {
@@ -1452,6 +1491,7 @@ if (!empty($arrayfields['p.date_cloture']['checked'])) {
 if (!empty($arrayfields['p.note_public']['checked'])) {
 	// Note public
 	print '<td class="liste_titre">';
+	print '<input class="flat maxwidth75" type="text" name="search_note_public" value="'.dol_escape_htmltag($search_note_public).'">';
 	print '</td>';
 }
 if (!empty($arrayfields['p.note_private']['checked'])) {
@@ -1700,6 +1740,7 @@ if (isModEnabled('margin') && (
 ) {
 	$with_margin_info = true;
 }
+
 $total_ht = 0;
 $total_margin = 0;
 
@@ -1713,10 +1754,13 @@ while ($i < $imaxinloop) {
 	if (empty($obj)) {
 		break; // Should not happen
 	}
+	if ($search_option) {
+		$param .= "&search_option=".urlencode($search_option);
+	}
 
 	$objectstatic->id = $obj->rowid;
 	$objectstatic->ref = $obj->ref;
-	$objectstatic->ref_client = $obj->ref_client;
+	$objectstatic->ref_customer = $obj->ref_client;
 	$objectstatic->note_public = $obj->note_public;
 	$objectstatic->note_private = $obj->note_private;
 	$objectstatic->statut = $obj->status;
@@ -1763,7 +1807,7 @@ while ($i < $imaxinloop) {
 	}
 
 	$marginInfo = array();
-	if ($with_margin_info === true) {
+	if ($with_margin_info) {
 		$objectstatic->fetch_lines();
 		$marginInfo = $formmargin->getMarginInfosArray($objectstatic);
 		$total_ht += $obj->total_ht;
@@ -1776,6 +1820,7 @@ while ($i < $imaxinloop) {
 			print '<div class="box-flex-container kanban">';
 		}
 		// Output Kanban
+		$objectstatic->thirdparty = $companystatic;
 		$userstatic->fetch($obj->fk_user_author);
 		$arrayofparams = array('selected' => in_array($object->id, $arrayofselected), 'authorlink' => $userstatic->getNomUrl(-2), 'projectlink' => $projectstatic->getNomUrl(2));
 		print $objectstatic->getKanbanView('', $arrayofparams);
@@ -1784,7 +1829,7 @@ while ($i < $imaxinloop) {
 			print '</td></tr>';
 		}
 	} else {
-		print '<tr class="oddeven">';
+		print '<tr class="oddeven '.((getDolGlobalInt('MAIN_FINISHED_LINES_OPACITY') == 1 && $obj->status > 1) ? 'opacitymedium' : '').'">';
 
 		// Action column
 		if (getDolGlobalString('MAIN_CHECKBOX_LEFT_COLUMN')) {
@@ -1988,7 +2033,7 @@ while ($i < $imaxinloop) {
 		// Availability
 		if (!empty($arrayfields['ava.rowid']['checked'])) {
 			print '<td class="center">';
-			$form->form_availability('', $obj->availability, 'none', 1);
+			$form->form_availability(0, $obj->availability, 'none', 1);
 			print '</td>';
 			if (!$i) {
 				$totalarray['nbfield']++;
